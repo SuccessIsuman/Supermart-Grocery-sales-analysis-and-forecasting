@@ -1,11 +1,5 @@
----
-title: "R Notebook"
-output: html_notebook
----
 
-Installing the needed libraries
-
-```{r}
+# installing the needed libraries 
 if (!requireNamespace("lubridate", quietly = TRUE)) {
   install.packages("lubridate")
 }
@@ -37,68 +31,49 @@ if (!requireNamespace("randomForest", quietly = TRUE)) {
   install.packages("randomForest")
 }
 
-```
 
-Loading in the dataset
+# Loading in the dataset
 
-```{r}
 # using the read_csv to read in the dataset file
 
 df <- read.csv("Supermart Grocery Sales - Retail Analytics Dataset.csv",header = T, stringsAsFactors=T)
 
 
-```
+#Checking for the structure of the dataset
 
-Checking for the structure of the dataset
-```{r}
-# Display the structure of the data frame
-str(df)
-```
 
-checking for the dimension of the dataset
-```{r}
+# checking for the dimension of the dataset
+
 dim(df)
-```
-there are 9998 rows and 11 columns in the data set
 
-```{r}
-```
 
-              
-             1. Data cleaning
-              
-              
 
-1. Checking for rows with missing values
-```{r}
+# 1. Data cleaning
+
+
+
+# Checking for rows with missing values
+
 # Identify rows with missing values
 rows_with_missing_values <- df[which(rowSums(is.na(df)) > 0), , drop = FALSE]
 
 # Display rows with missing values
 print(rows_with_missing_values)
-```
-there are no missing values in the dataset
 
-2. Identifying duplicated rows
 
-```{r}
+
+# 2. Identifying duplicated rows
+
+
 # Identify duplicated rows
 duplicated_rows <- df[duplicated(df) | duplicated(df, fromLast = TRUE), , drop = FALSE]
 
 # Display duplicated rows
 print(duplicated_rows)
-```
-Similarly, there are no duplicated rows in  the dataset
 
 
 
-      2. Augmenting the data set with more relevant columns
 
-
-
-1. Adding the cost price of the products 
-
-```{r}
 # Function to calculate cost price
 calculate_cost_price <- function(selling_price, profit, discount_percentage) {
   cost_price <- (selling_price - profit) / (1 - discount_percentage / 100)
@@ -107,23 +82,19 @@ calculate_cost_price <- function(selling_price, profit, discount_percentage) {
 
 # Apply the cost price calculation to the entire DataFrame
 df$cost_price <- calculate_cost_price(df$Sales, df$Profit, df$Discount)
-```
 
 
-Extracting month from the order data so as to know sale per months
+# Extracting month from the order data so as to know sale per months
 
 
-checking for unique values of the order date column
-```{r}
+# checking for unique values of the order date column
+
 # Checking unique values in a vector
 unique_values <- unique(df$Order.Date)
-```
 
-Looking through the order date columns it is observed that there different data format the "%m/%d/%Y" and the "%m-%d-%Y" hence a single conversion won't surfice.
 
-first converting the order date to a date-time object
-```{r}
-# Load the lubridate package which can handle date of different format
+#Looking through the order date columns it is observed that there different data format the "%m/%d/%Y" and the "%m-%d-%Y" hence a single conversion won't surfice.
+
 library(lubridate)
 
 # Specify the date formats
@@ -135,67 +106,54 @@ df$Order_date <- try(parse_date_time(df$Order.Date, orders = date_formats), sile
 # Print the entries that failed to parse
 failed_to_parse <- df[is.na(df$Order.Date), "Order.Date"]
 print(failed_to_parse)
-```
-```{r}
-
-```
 
 
-2 Extracting the Order month
-```{r}
+
 # Extract month and create a new 'month'
 
 df$month <- months(df$Order_date)
-```
 
-3 Extracting the Order year
-```{r}
+
+# Extracting the Order year
+
 # Extract year and create a new 'year'
 df$year <- format(df$Order_date, "%Y")
-```
 
-4. Extracting the Order year and month together
-```{r}
+
+# Extracting the Order year and month together
+
 # Extract year and month together and create a new 'year_month'
 df$year_month <- format(df$Order_date, "%Y-%m")
-```
 
 
-5. Extracting the Order day for sales analysis
-```{r}
+
+# Extracting the Order day for sales analysis
+
 # Extract day and create a new 'day'
 df$day <- format(df$Order_date, "%d")
-```
 
-
-```{r}
 # Extract the day names
 df$day_names <- weekdays(df$Order_date)
-```
 
 
-Checking for the dimeion of the dataset
-```{r}
-dim(df)
-```
 
-checking for missing rows
-```{r}
+
+# checking for missing rows
+
 # Identify rows with missing values
 rows_with_missing_values <- df[which(rowSums(is.na(df)) > 0), , drop = FALSE]
 
 # Display rows with missing values
 print(rows_with_missing_values)
-```
 
           
-         3. Exploratory Data Analysis
+ #        3. Exploratory Data Analysis
          
          
-         Demand Analysis 
+  #       Demand Analysis 
           
-Days with the highest orders 
-```{r}
+#Days with the highest orders 
+
 library(dplyr)
 library(ggplot2)
 
@@ -214,12 +172,11 @@ ggplot(grouped_data, aes(x = reorder(day_names, total_orders), y = total_orders)
   theme_minimal() +
   coord_flip()
 
-```
-Generally orders are poor on Thursdays and Fridays while orders are highest on Tuesdays and good on Saturday, Sunday and Mondays.
+# Generally orders are poor on Thursdays and Fridays while orders are highest on Tuesdays and good on Saturday, Sunday and Mondays.
 
 
-Orders per month of the year
-```{r}
+# Orders per month of the year
+
 
 # Grouping data by 'month' and counting orders
 grouped_data <- df %>%
@@ -235,12 +192,11 @@ ggplot(grouped_data, aes(x = reorder(month, total_orders), y = total_orders)) +
   labs(title = "Total Demand by Month", x = "Months", y = "Demand") +
   theme_minimal() +
   coord_flip()
-```
-Orders are highest in November, December and September, while Orders are lowest in the months of January and February.
 
 
-Orders per year
-```{r}
+
+# Orders per year
+
 
 # Grouping data by 'year' and counting orders
 grouped_data <- df %>%
@@ -255,11 +211,10 @@ ggplot(grouped_data, aes(x = reorder(year, total_orders), y = total_orders)) +
   geom_bar(stat = "identity", fill = "green", color = "black") +
   labs(title = "Total Demand by Year", x = "Years", y = "Demand") +
   theme_minimal() 
-```
-the bar plot shows that orders has been increasing per year from 2015 to 2018
 
-Orders per month of the year
-```{r}
+
+# Orders per month of the year
+
 # Create a horizontal bar plot of orders per month of the year in descending order
 library(ggplot2)
 library(dplyr)
@@ -271,21 +226,16 @@ df %>%
   labs(title = "Orders per Month of the year", x = "Month of the year", y = "Number of Orders") +
   theme_minimal()+
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
-```
 
 
-```{r}
+
+
 #  Value counting the year_month
 value_counts <- table(df$year_month)
 
 # Convert the result to a data frame for better visualization 
 value_counts_df <- as.data.frame(value_counts)
 
-
-```
-
-
-```{r}
 ## Create the plot
 plot <- ggplot(value_counts_df, aes(x = Var1, y = Freq)) +
   geom_bar(stat = "identity", fill = "green") +
@@ -300,12 +250,10 @@ print(plot)
 #ggsave("output_plot.png", plot, width = 8, height = 10)
  
 
-```
-it is observed that its consistent across the 4 years of the data set that orders are highest in in the months of November closely followed by the month of December and then September. except for the most resent year where the orders in the month of December was the highest closely followed by the month of September and November.
 
 
-Total sales by region
-```{r}
+# Total sales by region
+
 
 # Grouping data by 'month' and Summing Sales
 grouped_data <- df %>%
@@ -321,10 +269,7 @@ ggplot(grouped_data, aes(x = reorder(Region, total_sales), y = total_sales)) +
   labs(title = "Total Sales by Region", x = "Region", y = "Total Sales") +
   theme_minimal() 
 
-```
-# it is observed that the western region returned the highest over all sales of $4,798,743 for the four years while no the Northern region returned an insignificant sales in the last four years with a total value of $1,254, followed by the Southern region with a total sum of $2,440,461.
 
-```{r}
 ## Group by 'Region' and 'Year' columns and sum the 'Sales' column
 grouped_data <- aggregate(Sales ~ Region + year, data = df, sum)
 
@@ -334,15 +279,11 @@ bar_chart <- ggplot(grouped_data, aes(x = Region, y = Sales, fill = as.factor(ye
   labs(title = "Total Sales by Region and Year", x = "Region", y = "Total Sales", fill = "Year") +
   theme_minimal()
 
-# Display the bar chart
-print(bar_chart)
-```
-2018 recorded the highest sales in all region followed by 2017. However, it ws observed that the Northern region had no sales in the year 2015,2016 and 2018. it only had a total sales of $1,254 in the year 2017.
 
 
-In what city is the sales highest
+# In what city is the sales highest
 
-```{r}
+
 # Group by 'City' column and sum the 'Sales' column
 grouped_data2 <- aggregate(Sales ~ City, data = df, sum)
 
@@ -354,12 +295,7 @@ bar_chart <- ggplot(grouped_data2, aes(x = City, y = Sales)) +
   coord_flip() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))  # Rotate x-axis labels for better readability
 
-# Display the bar chart
-print(bar_chart)
-```
 
-
-```{r}
 # Group by 'Region' and 'City' columns and sum the 'Sales' column
 grouped_data3 <- aggregate(Sales ~ Region + City, data = df, sum)
 
@@ -370,32 +306,15 @@ bar_chart <- ggplot(grouped_data3, aes(x = City, y = Sales, fill = Region)) +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))  # Rotate x-axis labels for better readability
 
-# Display the bar chart
-print(bar_chart)
-```
-the cities of the northern region were not identified in the plot. hence, lets isolate and visualize them. 
-Cities in the western region tends to sell more followed closely by cities in the Eastern region.
 
-
-```{r}
 # Filter the dataset where 'Region' equals 'North'
 north_data <- subset(df, Region == "North")
-print(north_data)
-```
-Only one order and purchase was made in the entire Northern region by a costumer named Harish in the city of Vellore in 11-08-2017.
 
-
-Comparing the sales per moths of the years with the profit return
-
-```{r}
 ## Group by date and summarize sales and profit
 summarized_data <- df %>%
   group_by(Order_date) %>%
   summarize(total_sales = sum(Sales), total_profit = sum(Profit))
-```
 
-
-```{r}
 # Plot a line graph of total sales and profit over time
 line_plot <- ggplot(summarized_data, aes(x = Order_date)) +
   geom_line(aes(y = total_sales, color = "Total Sales"), size = 1) +
@@ -404,13 +323,7 @@ line_plot <- ggplot(summarized_data, aes(x = Order_date)) +
   scale_color_manual(values = c("Total Sales" = "blue", "Total Profit" = "red")) +
   theme_minimal()
 
-# Display the line plot
-print(line_plot)
-```
 
-Yearly Sales and Profit Trend
-
-```{r}
 # Convert 'year' column to numeric
 df$year <- as.numeric(as.character(df$year))
 
@@ -422,10 +335,6 @@ summarized_year_data <- df %>%
 # Sort the dataframe by year in descending order
 summarized_year_data <- summarized_year_data[order(-summarized_year_data$year), ]
 
-```
-
-
-```{r}
 # Line plot with sales and profit
 ggplot(summarized_year_data, aes(x = year)) +
   geom_line(aes(y = total_sales, color = "Sales"), size = 1) +
@@ -434,11 +343,7 @@ ggplot(summarized_year_data, aes(x = year)) +
        x = "Year", y = "Value") +
   scale_color_manual(values = c("Sales" = "blue", "Profit" = "red")) +
   theme_minimal()
-```
 
-Monthly Sales and Profit Trend
-
-```{r}
 # Convert 'year' column to numeric
 # df$year_month <- as.numeric(as.character(df$year_month))
 
@@ -454,10 +359,7 @@ summarized_month_data$year_month <- factor(summarized_month_data$year_month)
 # Extract the integer codes
 summarized_month_data$year_month <- as.integer(summarized_month_data$year_month)
 
-```
 
-
-```{r}
 # Line plot with sales and profit
 ggplot(summarized_month_data, aes(x = year_month)) +
   geom_line(aes(y = total_sales, color = "Sales"), size = 1) +
@@ -466,14 +368,7 @@ ggplot(summarized_month_data, aes(x = year_month)) +
        x = "Months of the year", y = "Value") +
   scale_color_manual(values = c("Sales" = "blue", "Profit" = "red")) +
   theme_minimal()
-```
-the profit generated were in conformity with the level of number of goods sold at different time 
 
-
-what are the costumers Demands by category
-
-Orders by Category of products
-```{r}
 
 # Grouping data by 'month' and Summing Sales
 grouped_data <- df %>%
@@ -490,12 +385,7 @@ ggplot(grouped_data, aes(x = reorder(Category, total_order), y = total_order)) +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))  # Rotate x-axis labels for better readability
 
-```
-There is a roughly equal demands for all product categories with snack being the relatively highest in demand 
 
-
-Orders by Category of products by Region
-```{r}
 library(dplyr)
 
 # Group by 'Region' and 'Category' columns and count the occurrences
@@ -512,13 +402,7 @@ ggplot(grouped_data, aes(x = Region, y = count, fill = Category)) +
   theme_minimal()
 
 
-```
-Despite the Snack was the highest in over all demand, costumers in the western region ordered or of Eggs, Meat, and Bakery products, cosely followed snack.
 
-
-Orders by Sub.Category
-
-```{r}
  # Value counting the Sub.category column
 value_count <- table(df$Sub.Category)
 
@@ -536,12 +420,11 @@ bar_chart <- ggplot(value_count_df, aes(x = factor(Var1, levels = unique(Var1)),
   coord_flip()
 
 print(bar_chart)
-```
 
 
-Orders by Sub.Category of products by Region
+# Orders by Sub.Category of products by Region
 
-```{r}
+
 # Group by 'Region' and 'Category' columns and count the occurrences
 grouped_data <- df %>%
   group_by(Region, Sub.Category) %>%
@@ -558,9 +441,6 @@ ggplot(grouped_data, aes(x = Sub.Category, y = count, fill = Region)) +
   theme_minimal() + coord_flip()
 
 
-```
-
-```{r}
 # Group by 'product' and sum the 'sales' column
 grouped_data <- aggregate(Sales ~ Category, data = df, sum)
 
@@ -573,10 +453,7 @@ bar_chart <- ggplot(grouped_data, aes(x = Category, y = Sales)) +
 
 # Display the bar chart
 print(bar_chart)
-```
 
-
-```{r}
 # Group by 'product' and sum the 'sales' column
 grouped_data <- aggregate(Sales ~ Sub.Category, data = df, sum)
 
@@ -590,69 +467,55 @@ bar_chart <- ggplot(grouped_data, aes(x = Sub.Category, y = Sales)) +
 
 # Display the bar chart
 print(bar_chart)
-```
+
 
 
  
 
 
-                        Time Series Analysis (Sales Forcasting) 
+#                        Time Series Analysis (Sales Forcasting) 
                         
                         
                         
 
-    Data pre processing for Sales Forecasting
+ #   Data pre processing for Sales Forecasting
 
 
-```{r}
 # selecting the subset of data relevant for forecasting
 Forcast_df <- df[, c("year_month", "Sales")]
 
-```
 
-    
-
-```{r}
 # Sort the data frame by the Order_date column in ascending order
 Forcast_df <- Forcast_df[order(Forcast_df$year_month), ]
-```
 
-Converting the date to a date object
-```{r}
+
+#Converting the date to a date object
+
 Forcast_df$year_month <- paste(Forcast_df$year_month, '-1', sep = '')
 
 # Convert the 'date' column to Date type
 Forcast_df$year_month <- as.Date(Forcast_df$year_month)
-```
 
-Isolating the range of Years present in the dataset
-```{r}
+# Isolating the range of Years present in the dataset
+
 first_date <- Forcast_df$year_month[1]
 last_date <- Forcast_df$year_month[length(Forcast_df$year_month)]
 
-# View the selected dates
-print(first_date)
-print(last_date)
-```
 
-Due to the duplicate values present in the Forcast_df, there is need for grouping so as to have a unique range of date needed for a time-series analysis
 
-```{r}
 library(dplyr)
 
 # Grouping by data to get a unique range of date and summing the sales value
 data <- Forcast_df %>%
   group_by(year_month) %>%
   summarise(Sales = sum(Sales))
-```
 
 
 
 
 
-ploting the trend of sales since 2015 to 2018
+# ploting the trend of sales since 2015 to 2018
 
-```{r}
 
 
 ggplot(data, aes(x = year_month)) +
@@ -661,9 +524,6 @@ ggplot(data, aes(x = year_month)) +
        x = "Year", y = "Sales") +
   scale_color_manual(values = c("Sales" = "red")) +
   theme_minimal()
-```
-The plot above shows a seasonality and trend as sales drops at the beginning of the year rising at every quarter of the year with the highest peak seen in the last quarter of the year followed by a sharp drop at the beginning of another year with a bottom higher than the previous year. This represent a upward trend.
-
 
 
 
@@ -671,11 +531,11 @@ The plot above shows a seasonality and trend as sales drops at the beginning of 
 
        
              
-              Training AUTO ARIMA Model with the raw seasonal data
+       #       Training AUTO ARIMA Model with the raw seasonal data
               
               
-1. Split the dataset into training and testing
-```{r}
+# 1. Split the dataset into training and testing
+
 # load necessary packages
 library(forecast)
 library(Metrics)
@@ -689,22 +549,15 @@ train_data <- data[1:split_index, ]
 test_data <- data[(split_index + 1):nrow(data), ]
 
 
-```
-      
-      Training an ordinary linear regression model
+#      Training an ordinary linear regression model
         
-```{r}
+
 # Fit a linear regression model
 linear_model <- lm(Sales ~ year_month, data = train_data)
 
 # Print the summary of the model
 summary(linear_model)
-```
-        
 
-
-
-```{r}
 # Make predictions on the testing set
 
 # Make predictions using the model
@@ -712,11 +565,10 @@ lm_predictions <- predict(linear_model, newdata = test_data)
 
 # Print the first few predictions
 head(lm_predictions)
-```
 
 
-Evaluation of linear regression model
-```{r}
+# Evaluation of linear regression model
+
 # Evaluate the model's performance on the testing set
 mae_value <- mae(test_data$Sales, lm_predictions)
 mse_value <- mse(test_data$Sales, lm_predictions)
@@ -728,20 +580,17 @@ cat("Mean Absolute Error (MAE):", mae_value, "\n")
 cat("Mean Squared Error (MSE):", mse_value, "\n")
 cat("Root Mean Squared Error (RMSE):", rmse_value, "\n")
 cat("Mean Absolute Percentage Error (MAPE):", mape_value, "\n")
-```
 
-
-```{r}
 # Optionally, plot the actual vs. predicted values for visualization
 plot(test_data$year_month, test_data$Sales, type = "l", col = "blue", ylab = "Sales", xlab = "Date", main = "Linear Regression Model Evaluation")
 lines(test_data$year_month, lm_predictions, col = "red", lty = 2)
 legend("topright", legend = c("Actual", "Predicted"), col = c("blue", "red"), lty = 1:2)
-```
 
 
-      Training A Random Forest Model
 
-```{r}
+# Training A Random Forest Model
+
+
 
 #  load the required library
 library(randomForest)
@@ -765,18 +614,15 @@ rf_model <- randomForest(Sales ~ lag_1 + lag_2, data = train_data)
 
 print(summary(rf_model))
 
-```
 
-```{r}
 # Make predictions on the test set
 rf_predictions <- predict(rf_model, newdata = test_data)
 
 # Print the first few predictions
 head(rf_predictions)
-```
 
-Evaluation of the Random forest regressor
-```{r}
+# Evaluation of the Random forest regressor
+
 # Evaluate the model's performance on the testing set
 mae_value <- mae(test_data$Sales, rf_predictions)
 mse_value <- mse(test_data$Sales, rf_predictions)
@@ -788,21 +634,18 @@ cat("Mean Absolute Error (MAE):", mae_value, "\n")
 cat("Mean Squared Error (MSE):", mse_value, "\n")
 cat("Root Mean Squared Error (RMSE):", rmse_value, "\n")
 cat("Mean Absolute Percentage Error (MAPE):", mape_value, "\n")
-```
 
-
-```{r}
 # Optionally, plot the actual vs. predicted values for visualization
 plot(test_data$year_month, test_data$Sales, type = "l", col = "blue", ylab = "Sales", xlab = "Date", main = "Random forest regressor Model Evaluation")
 lines(test_data$year_month, rf_predictions, col = "red", lty = 2)
 legend("topright", legend = c("Actual", "Predicted"), col = c("blue", "red"), lty = 1:2)
-```
 
-        Training An Auto ARIMA model
-        
-        
-2. Train the ARIMA model on the training set by first creating a time series of 12 data points i.e 12 month (1 year)
-```{r}
+
+# Training An Auto ARIMA model
+
+
+# 2. Train the ARIMA model on the training set by first creating a time series of 12 data points i.e 12 month (1 year)
+
 
 library(tseries)
 
@@ -815,28 +658,28 @@ arima_model <- auto.arima(ts_data)
 # Print the summary of the ARIMA model
 print(summary(arima_model))
 
-```
 
-3. Make prediction of the testing set
-```{r}
+
+# 3. Make prediction of the testing set
+
 # Make predictions on the testing set
 
 forecast_values <- forecast(arima_model, h = nrow(test_data))
 
 # Print the forecast values
 print(forecast_values)
-```
 
-4. Extract the prediction values from the prediction report
-```{r}
+
+# 4. Extract the prediction values from the prediction report
+
 # Extract the predicted values
 predicted_values <- as.numeric(forecast_values$mean)
 
 print(predicted_values)
-```
 
-5. Evaluate the performance of the model on the testing set by calculating the various evaluation metrices
-```{r}
+
+# 5. Evaluate the performance of the model on the testing set by calculating the various evaluation metrices
+
 
 # Evaluate the model's performance on the testing set
 mae_value <- mae(test_data$Sales, predicted_values)
@@ -851,25 +694,24 @@ cat("Root Mean Squared Error (RMSE):", rmse_value, "\n")
 cat("Mean Absolute Percentage Error (MAPE):", mape_value, "\n")
 
 
-```
 
-6. plot the Actual values and the predicted values 
-```{r}
+# plot the Actual values and the predicted values 
+
 # Optionally, plot the actual vs. predicted values for visualization
 plot(test_data$year_month, test_data$Sales, type = "l", col = "blue", ylab = "Sales", xlab = "Date", main = "ARIMA Model Evaluation")
 lines(test_data$year_month, predicted_values, col = "red", lty = 2)
 legend("topright", legend = c("Actual", "Predicted"), col = c("blue", "red"), lty = 1:2)
-```
-
-        
 
 
-      
-        
-          Making future focast with the best trained model
 
-1. Make prediction (forecast) for the next 12 data points i.e for the next 12 months
-```{r}
+
+
+
+
+# Making future focast with the best trained model
+
+# 1. Make prediction (forecast) for the next 12 data points i.e for the next 12 months
+
 # Make predictions (example: next 12 periods)
 forecast_values_12 <- forecast(arima_model, h = 12)
 
@@ -879,20 +721,9 @@ forecast_values_12 <- forecast(arima_model, h = 12)
 print(forecast_values_12)
 
 
-```
 
-2. Ploting the future forecast of the ARIMA model
-```{r}
+# 2. Ploting the future forecast of the ARIMA model
 
 # Plot the forecast with legend
 plot(forecast_values_12, main = "ARIMA Forecast for Next 24 Months (2 years)", xlab = "Date", ylab = "Sales")
 legend("topright", legend = c("Forecast"), col = c("blue"), lty = 1)
-```
-
-     Code Refferences 
-     
-     Stack Overflow
-     Geek 4 Geek
-     Code camp
-     Wisdom ml
-
